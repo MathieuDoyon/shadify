@@ -68,15 +68,34 @@ The production image contains the API, puzzle datasets, and compiled documentati
 It runs as user `10001` and listens on port `5000`. The image supports Linux amd64
 and arm64 builds. No database, secrets, or persistent volumes are required.
 
-1. Make these files available in the Git repository that Dokploy will clone.
-2. In Dokploy on `mathdoy`, create a **Docker Compose** service named `shadify`.
-3. Connect `MathieuDoyon/shadify`, select the branch containing these files, and set
-   the Compose path to `docker-compose.dokploy.yml`.
+The live deployment is https://shadify.mathdoy.com, configured as follows:
+
+| Setting | Value |
+| --- | --- |
+| Dokploy project | `shadify` (its own project, not `mathdoy`) |
+| Environment | `production` |
+| Service | **Docker Compose** service named `shadify` |
+| Source | GitHub (Dokploy GitHub App) `MathieuDoyon/shadify`, branch `master` |
+| Compose path | `./docker-compose.dokploy.yml` |
+| Trigger | On push: every push to `master` rebuilds and redeploys |
+| Domain | host `shadify.mathdoy.com`, service `app`, port `5000`, path `/` |
+| HTTPS / certificate | **Off / none.** TLS terminates at the Cloudflare edge |
+| Environment variables | None |
+
+To recreate it:
+
+1. In Dokploy, create a project named `shadify`. This also creates its default
+   `production` environment.
+2. In `production`, create a **Docker Compose** service named `shadify`.
+3. Set the provider to GitHub, choose `MathieuDoyon/shadify` and branch `master`,
+   set the Compose path to `./docker-compose.dokploy.yml`, and keep the push trigger.
 4. Under **Domains**, add host `shadify.mathdoy.com`, service `app`, container port
-   `5000`, and path `/`. Enable HTTPS and select the certificate resolver configured
-   on your server. Dokploy supplies the Traefik routing and network configuration.
-5. Confirm DNS routes `shadify.mathdoy.com` to your homelab ingress (or its existing
-   Cloudflare Tunnel), then deploy.
+   `5000`, path `/`. Leave HTTPS **disabled** and do not pick a Let's Encrypt
+   certificate. Public traffic reaches the server through the Cloudflare Tunnel,
+   whose wildcard `*.mathdoy.com` route forwards to Dokploy's Traefik on port 80.
+   That means no DNS or tunnel change is needed either.
+5. Deploy, then check that the container reports `healthy` and that both URLs below
+   return `200` publicly.
 
 The Compose service uses the `prod` build target and does not publish a host port.
 Keep the existing `docker-compose.yml` for local development.
