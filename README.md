@@ -62,5 +62,37 @@ docker build -t shadify . --target prod
 docker run --rm -p 5000:5000 --name shadify shadify
 ```
 
+## Deploy with Dokploy
+
+The production image contains the API, puzzle datasets, and compiled documentation.
+It runs as user `10001` and listens on port `5000`. The image supports Linux amd64
+and arm64 builds. No database, secrets, or persistent volumes are required.
+
+1. Make these files available in the Git repository that Dokploy will clone.
+2. In Dokploy on `mathdoy`, create a **Docker Compose** service named `shadify`.
+3. Connect `MathieuDoyon/shadify`, select the branch containing these files, and set
+   the Compose path to `docker-compose.dokploy.yml`.
+4. Under **Domains**, add host `shadify.mathdoy.com`, service `app`, container port
+   `5000`, and path `/`. Enable HTTPS and select the certificate resolver configured
+   on your server. Dokploy supplies the Traefik routing and network configuration.
+5. Confirm DNS routes `shadify.mathdoy.com` to your homelab ingress (or its existing
+   Cloudflare Tunnel), then deploy.
+
+The Compose service uses the `prod` build target and does not publish a host port.
+Keep the existing `docker-compose.yml` for local development.
+
+To test the production image locally:
+
+```sh
+docker build --target prod -t shadify:local .
+docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
+  -p 127.0.0.1:5000:5000 shadify:local
+```
+
+Check `/` for the documentation and `/api/countries/capital-quiz` for a
+dataset-backed API response. The image health check requests `/` internally.
+If a deployment fails, use Dokploy's deployment logs; for a regression after a
+successful deployment, roll back to the preceding deployment in Dokploy.
+
 <div align="center">Made with &#9829;</div>
 <div align="center"><a href="https://github.com/cheatsnake/shadify/blob/master/LICENSE">LICENSE</a> 2022-2023</div>

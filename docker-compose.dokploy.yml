@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      target: prod
+    restart: unless-stopped
+    environment:
+      PORT: "5000"
+    expose:
+      - "5000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
